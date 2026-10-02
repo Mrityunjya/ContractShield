@@ -1,15 +1,12 @@
-import json
 from pathlib import Path
 
-from jsonschema import validate
+from utils.contract_validator import (
+    assert_required_fields,
+    validate_response_schema,
+)
 
 
 SCHEMA_PATH = Path(__file__).parent.parent / "schemas" / "user_schema.json"
-
-
-def load_schema():
-    with open(SCHEMA_PATH, "r", encoding="utf-8") as file:
-        return json.load(file)
 
 
 def test_user_api_contract(api_client):
@@ -17,10 +14,9 @@ def test_user_api_contract(api_client):
 
     assert response.status_code == 200
 
-    payload = response.json()
-    schema = load_schema()
+    validate_response_schema(response, SCHEMA_PATH)
 
-    validate(instance=payload, schema=schema)
+
 def test_user_required_fields(api_client):
     response = api_client.get("/users/1")
 
@@ -39,5 +35,4 @@ def test_user_required_fields(api_client):
         "company",
     ]
 
-    for field in required_fields:
-        assert field in payload, f"Missing required field: {field}"
+    assert_required_fields(payload, required_fields)
